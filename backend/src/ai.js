@@ -34,6 +34,13 @@ function generateLocalAiAnalysis({ language, code, task, testResult, studentQues
       proTip = "Pro maslahat: Zamonaviy CSS da Flexbox va Grid tizimlarini yaxshi o'zlashtirish har qanday murakkab dizaynni oson yasash imkonini beradi.";
     }
 
+    if (language === "quiz") {
+      return `🎉 **Tabriklaymiz! Test muvaffaqiyatli topshirildi!**\n\n` +
+        `✅ ${testResult?.explanation || "Mavzu o'zlashtirildi."}\n\n` +
+        `💡 **Maslahat:** Darsdagi "Amaliy mashq" bo'limini kompyuteringizda albatta bajaring — ko'nikma faqat amaliyotda mustahkamlanadi.\n\n` +
+        `Keyingi mavzuga o'tishingiz mumkin! 🚀`;
+    }
+
     return `🎉 **Ajoyib natija! Barcha tekshiruvlar 100% muvaffaqiyatli o'tdi!**\n\n` +
       `✅ **Tahlil:**\n` +
       `- Siz topshiriq shartini to'g'ri tushundingiz va kerakli mantiqni to'g'ri ifodaladingiz.\n` +
@@ -47,6 +54,13 @@ function generateLocalAiAnalysis({ language, code, task, testResult, studentQues
   let explanation = "";
   let suggestion = "";
   let sample = "";
+
+  if (language === "quiz") {
+    let result = `🤖 **AI Ustoz Tahlili:**\n\n${testResult?.explanation || "Ayrim savollarga noto'g'ri javob berildi."}\n\n`;
+    result += `💡 **Tavsiya:** "1. Darslik" bo'limini qayta o'qing, ayniqsa xato qilgan savollaringiz mavzusiga e'tibor bering, so'ng testni qayta topshiring.\n`;
+    result += `\n✨ *Har bir xato — yangi bilim. Yana bir urinib ko'ring!*`;
+    return result;
+  }
 
   // Check empty code
   if (codeStr.length < 3) {

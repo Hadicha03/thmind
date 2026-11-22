@@ -15,7 +15,7 @@ function ensureDirectory() {
   }
 }
 
-function buildInitialData() {
+function buildCatalogData() {
   const tracks = [];
   const modules = [];
   const tasks = [];
@@ -65,6 +65,11 @@ function buildInitialData() {
     });
   });
 
+  return { tracks, modules, tasks };
+}
+
+function buildInitialData() {
+  const { tracks, modules, tasks } = buildCatalogData();
   return {
     tracks,
     modules,
@@ -90,6 +95,21 @@ function buildInitialData() {
   };
 }
 
+function stripSecrets(task) {
+  const { solution_code, ...rest } = task;
+  if (rest.language === "quiz" && Array.isArray(rest.checker?.questions)) {
+    rest.checker = {
+      ...rest.checker,
+      questions: rest.checker.questions.map(({ q, options }) => ({ q, options })),
+    };
+  }
+  return rest;
+}
+
+function trackIdFor(slug) {
+  return `track-${slug || "frontend"}`;
+}
+
 class Database {
   constructor() {
     ensureDirectory();
@@ -104,6 +124,8 @@ class Database {
         if (!this.data.tracks || !this.data.tasks || this.data.tasks.length === 0) {
           this.data = buildInitialData();
           this.save();
+        } else if (this.addMissingCatalogTracks()) {
+          this.save();
         }
       } else {
         this.data = buildInitialData();
@@ -114,6 +136,19 @@ class Database {
       this.data = buildInitialData();
       this.save();
     }
+  }
+
+  // Adds catalog tracks (e.g. newly released courses) that are missing from an existing database
+  addMissingCatalogTracks() {
+    const fresh = buildCatalogData();
+    const existing = new Set(this.data.tracks.map((t) => t.slug));
+    const missing = fresh.tracks.filter((t) => !existing.has(t.slug));
+    if (!missing.length) return false;
+    const slugs = new Set(missing.map((t) => t.slug));
+    this.data.tracks.push(...missing);
+    this.data.modules.push(...fresh.modules.filter((m) => slugs.has(m.track_slug)));
+    this.data.tasks.push(...fresh.tasks.filter((t) => slugs.has(t.track_slug)));
+    return true;
   }
 
   save() {
@@ -154,16 +189,14 @@ class Database {
       .sort((a, b) => a.sort_order - b.sort_order)
       .map((t) => {
         if (includeSecrets) return t;
-        const { solution_code, ...rest } = t;
-        return rest;
+        return stripSecrets(t);
       });
   }
 
   getAllTasks(includeSecrets = false) {
     return this.data.tasks.map((t) => {
       if (includeSecrets) return t;
-      const { solution_code, ...rest } = t;
-      return rest;
+      return stripSecrets(t);
     });
   }
 
@@ -171,8 +204,7 @@ class Database {
     const task = this.data.tasks.find((t) => t.id === id);
     if (!task) return null;
     if (includeSecrets) return task;
-    const { solution_code, ...rest } = task;
-    return rest;
+    return stripSecrets(task);
   }
 
   createTask(taskData) {
@@ -180,7 +212,7 @@ class Database {
     const newTask = {
       id,
       module_id: taskData.module_id || "mod-custom",
-      track_id: taskData.track_id || (taskData.track_slug === "frontend" ? "track-frontend" : "track-backend"),
+      track_id: taskData.track_id || trackIdFor(taskData.track_slug),
       track_slug: taskData.track_slug || "frontend",
       title: taskData.title || "Yangi topshiriq",
       language: taskData.language || "javascript",
@@ -287,7 +319,7 @@ class Database {
     const id = moduleData.id || `mod-${Date.now()}-${crypto.randomBytes(3).toString("hex")}`;
     const newMod = {
       id,
-      track_id: moduleData.track_id || (moduleData.track_slug === "frontend" ? "track-frontend" : "track-backend"),
+      track_id: moduleData.track_id || trackIdFor(moduleData.track_slug),
       track_slug: moduleData.track_slug || "frontend",
       title: moduleData.title || "Yangi modul",
       summary: moduleData.summary || "",

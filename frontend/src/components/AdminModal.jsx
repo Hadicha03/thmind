@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { getTrackTheme } from "../trackTheme.js";
 
 export default function AdminModal({ onClose, onRefreshTracks }) {
   const [token, setToken] = useState(() => sessionStorage.getItem("thmind_admin_token") || "");
@@ -404,7 +405,7 @@ export default function AdminModal({ onClose, onRefreshTracks }) {
                       <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>Jami Topshiriqlar:</div>
                       <div style={{ fontSize: "24px", fontWeight: "800", color: "var(--blue-500)" }}>{stats?.total_tasks || 0} ta</div>
                       <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "4px" }}>
-                        Frontend: {stats?.frontend_tasks || 0} • Backend: {stats?.backend_tasks || 0}
+                        Frontend: {stats?.frontend_tasks || 0} • Backend: {stats?.backend_tasks || 0} • Savodxonlik: {stats?.savodxonlik_tasks || 0}
                       </div>
                     </div>
 
@@ -480,8 +481,8 @@ export default function AdminModal({ onClose, onRefreshTracks }) {
                                   fontWeight: "700",
                                   padding: "2px 6px",
                                   borderRadius: "4px",
-                                  background: t.track_slug === "frontend" ? "var(--red-light)" : "var(--blue-light)",
-                                  color: t.track_slug === "frontend" ? "var(--red-500)" : "var(--blue-500)",
+                                  background: getTrackTheme(t.track_slug).light,
+                                  color: getTrackTheme(t.track_slug).color,
                                 }}
                               >
                                 {t.track_slug.toUpperCase()}
@@ -544,6 +545,7 @@ export default function AdminModal({ onClose, onRefreshTracks }) {
                           >
                             <option value="frontend">Frontend</option>
                             <option value="backend">Backend</option>
+                            <option value="savodxonlik">Kompyuter savodxonligi</option>
                           </select>
                         </div>
                         <div>
@@ -556,6 +558,7 @@ export default function AdminModal({ onClose, onRefreshTracks }) {
                             <option value="javascript">JavaScript</option>
                             <option value="html">HTML</option>
                             <option value="css">CSS</option>
+                            <option value="quiz">Test (savol-javob)</option>
                           </select>
                         </div>
                         <div>

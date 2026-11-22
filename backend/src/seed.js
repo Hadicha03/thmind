@@ -1,3 +1,5 @@
+import { savodxonlikTrack } from "./seed-savodxonlik.js";
+
 export const catalog = [
   {
     slug: "frontend",
@@ -738,4 +740,5 @@ const activeUsers = users.filter(user => user.status === "active");
       },
     ],
   },
+  savodxonlikTrack,
 ];

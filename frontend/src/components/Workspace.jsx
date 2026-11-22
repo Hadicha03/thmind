@@ -109,6 +109,25 @@ export default function Workspace({
   const [isAskingAi, setIsAskingAi] = useState(false);
   const textareaRef = useRef(null);
 
+  const isQuiz = task?.language === "quiz";
+  const quizQuestions = isQuiz && Array.isArray(task?.checker?.questions) ? task.checker.questions : [];
+  const quizAnswers = (() => {
+    if (!isQuiz) return [];
+    try {
+      const parsed = JSON.parse(code || "{}");
+      return Array.isArray(parsed.answers) ? parsed.answers : [];
+    } catch {
+      return [];
+    }
+  })();
+  const answeredCount = quizQuestions.filter((_, idx) => Number.isInteger(quizAnswers[idx])).length;
+
+  const handleSelectAnswer = (questionIdx, optionIdx) => {
+    const next = quizQuestions.map((_, idx) => (Number.isInteger(quizAnswers[idx]) ? quizAnswers[idx] : null));
+    next[questionIdx] = optionIdx;
+    handleCodeChange(JSON.stringify({ answers: next }));
+  };
+
   // When task changes, update code and start on 'theory' mode (unless already passed)
   useEffect(() => {
     if (task?.id) {
@@ -174,11 +193,15 @@ export default function Workspace({
 
   const handleRun = () => {
     if (isChecking) return;
+    if (isQuiz && answeredCount < quizQuestions.length) {
+      alert(`Iltimos, barcha savollarga javob belgilang (${answeredCount}/${quizQuestions.length}).`);
+      return;
+    }
     onCheckCode(code);
   };
 
   const handleReset = () => {
-    if (window.confirm("Kodingizni boshlang'ich holatga qaytarmoqchimisiz?")) {
+    if (window.confirm(isQuiz ? "Belgilangan javoblarni tozalamoqchimisiz?" : "Kodingizni boshlang'ich holatga qaytarmoqchimisiz?")) {
       handleCodeChange(task.starter_code || "");
     }
   };
@@ -250,7 +273,7 @@ export default function Workspace({
                 color: "var(--blue-500)",
               }}
             >
-              {task?.language}
+              {isQuiz ? "test" : task?.language}
             </span>
             <span
               style={{
@@ -368,6 +391,7 @@ export default function Workspace({
         {leftPaneMode === "task" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             {/* Friendly flexible matching notice */}
+            {!isQuiz && (
             <div
               style={{
                 background: "var(--badge-blue-bg)",
@@ -381,6 +405,7 @@ export default function Workspace({
             >
               <strong style={{ color: "var(--blue-500)" }}>💡 Muhim qoida:</strong> Matn yoki mazmunni o'zingiz xohlagancha erkin yozishingiz mumkin! Asosiy maqsad — teglar va dastur mantig'ini to'g'ri yozishni o'rganish.
             </div>
+            )}
 
             <div className="instructions-body">
               <FormattedContent content={task?.instructions} />
@@ -415,10 +440,10 @@ export default function Workspace({
         <div className="editor-toolbar">
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <span style={{ fontSize: "12px", fontWeight: "700", color: "var(--text-muted)", textTransform: "uppercase" }}>
-              {task?.language} Muharrir
+              {isQuiz ? "📝 Test savollari" : `${task?.language} Muharrir`}
             </span>
             <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
-              (Ctrl + Enter = Tekshirish)
+              {isQuiz ? `(Belgilangan: ${answeredCount}/${quizQuestions.length})` : "(Ctrl + Enter = Tekshirish)"}
             </span>
           </div>
 
@@ -426,9 +451,11 @@ export default function Workspace({
             <button className="btn btn-ghost" onClick={handleReset} title="Kodni tozalash va tiklash" style={{ fontSize: "12px", padding: "4px 8px" }}>
               Tiklash
             </button>
-            <button className="btn btn-ghost" onClick={handleCopy} title="Nusxalash" style={{ fontSize: "12px", padding: "4px 8px" }}>
-              Nusxa
-            </button>
+            {!isQuiz && (
+              <button className="btn btn-ghost" onClick={handleCopy} title="Nusxalash" style={{ fontSize: "12px", padding: "4px 8px" }}>
+                Nusxa
+              </button>
+            )}
             <button
               className="btn btn-primary glow-red-blue"
               onClick={handleRun}
@@ -447,7 +474,35 @@ export default function Workspace({
           </div>
         </div>
 
-        {/* Code Input */}
+        {isQuiz ? (
+          <div className="quiz-container">
+            {quizQuestions.map((item, qIdx) => {
+              const result = lastResult?.test_results?.[qIdx];
+              const status = result ? (result.passed ? "correct" : "wrong") : "";
+              return (
+                <div key={qIdx} className={`quiz-question ${status}`}>
+                  <div className="quiz-question-title">
+                    {qIdx + 1}. {item.q} {result && <span>{result.passed ? "✅" : "❌"}</span>}
+                  </div>
+                  {item.options.map((option, oIdx) => (
+                    <label key={oIdx} className={`quiz-option ${quizAnswers[qIdx] === oIdx ? "selected" : ""}`}>
+                      <input
+                        type="radio"
+                        name={`quiz-${task.id}-${qIdx}`}
+                        checked={quizAnswers[qIdx] === oIdx}
+                        onChange={() => handleSelectAnswer(qIdx, oIdx)}
+                      />
+                      <span>{String.fromCharCode(65 + oIdx)}) {option}</span>
+                    </label>
+                  ))}
+                  {result && !result.passed && (
+                    <div style={{ marginTop: "8px", fontSize: "12.5px", color: "var(--badge-red)" }}>{result.message}</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
         <div className="editor-container">
           <div className="editor-line-numbers">
             {Array.from({ length: lineCount }).map((_, i) => (
@@ -464,6 +519,7 @@ export default function Workspace({
             placeholder="Kodingizni shu yerga yozing..."
           />
         </div>
+        )}
 
         {/* Results / Bottom Tabs */}
         <div className="results-pane">
@@ -524,7 +580,7 @@ export default function Workspace({
               <div>
                 {!lastResult ? (
                   <div style={{ color: "var(--text-muted)", fontSize: "13px", padding: "10px 0" }}>
-                    Kodni yozing va yuqoridagi <strong>"Tekshirish & AI Tahlil"</strong> tugmasini bosing.
+                    {isQuiz ? "Savollarga javob belgilang" : "Kodni yozing"} va yuqoridagi <strong>"Tekshirish & AI Tahlil"</strong> tugmasini bosing.
                   </div>
                 ) : (
                   <div>
@@ -532,6 +588,11 @@ export default function Workspace({
                       <span style={{ fontSize: "14px", fontWeight: "800", color: lastResult.passed ? "var(--badge-green)" : "var(--badge-red)" }}>
                         {lastResult.passed ? "🎉 Barcha tekshiruvlar to'g'ri bajarildi!" : "⚠️ Ayrim testlar o'tmadi"}
                       </span>
+                      {lastResult.score && (
+                        <span style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+                          Natija: {lastResult.score.correct}/{lastResult.score.total} ({lastResult.score.percent}%)
+                        </span>
+                      )}
                     </div>
 
                     {lastResult.test_results?.map((t, idx) => (

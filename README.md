@@ -15,6 +15,7 @@
    - Yuqori paneldagi **Frontend** va **Backend** tugmalari:
      - **Frontend tanlanganda:** HTML asoslari, CSS bilan bezash, JavaScript darslari va amaliy topshiriqlari chiqadi.
      - **Backend tanlanganda:** Tekshiruv funksiyalari, API javoblari, ma'lumotlar ustida ishlash darslari va topshiriqlari chiqadi.
+     - **Kompyuter savodxonligi tanlanganda:** 2 oylik kurs (24 mavzu + PowerPoint bonus) — kompyuter qismlari, Windows, fayllar, Word, Excel, Internet, email va onlayn xavfsizlik. Har bir mavzu: darslik + amaliy mashq + 5 ta test savoli (o'tish uchun kamida 80%). Barcha mavzular topshirilsa, sertifikat beriladi. Kurs mazmuni: `backend/src/seed-savodxonlik.js`.
 
 3. **Dark / Light Mode (Tungi va Kunduzgi Rejim):**
    - Bitta tugma orqali qulay tungi (Dark) yoki kunduzgi (Light) ko'rinishga o'tish imkoniyati.

@@ -299,6 +299,52 @@ function checkCss(code, spec) {
   return pack(results);
 }
 
+function checkQuiz(code, spec) {
+  const questions = Array.isArray(spec?.questions) ? spec.questions : [];
+  if (!questions.length) {
+    return pack([{ name: "Test", passed: false, message: "Bu mavzu uchun test savollari sozlanmagan." }]);
+  }
+  let answers;
+  try {
+    const parsed = JSON.parse(code);
+    answers = Array.isArray(parsed) ? parsed : parsed?.answers;
+  } catch {
+    answers = null;
+  }
+  if (!Array.isArray(answers)) {
+    return pack([{ name: "Test", passed: false, message: "Javoblar formati noto'g'ri. Savollarga javob belgilab, qaytadan yuboring." }]);
+  }
+
+  const results = questions.map((question, idx) => {
+    const name = `${idx + 1}-savol`;
+    const given = answers[idx];
+    if (given === null || given === undefined || given === "") {
+      return { name, passed: false, message: `${idx + 1}-savolga javob belgilanmagan.` };
+    }
+    const ok = Number(given) === Number(question.answer);
+    return {
+      name,
+      passed: ok,
+      message: ok
+        ? "To'g'ri javob!"
+        : `Noto'g'ri javob.${question.hint ? ` Maslahat: ${question.hint}` : " Darsni qayta o'qib chiqing."}`,
+    };
+  });
+
+  const correct = results.filter((r) => r.passed).length;
+  const percent = Math.round((correct / questions.length) * 100);
+  const required = Number(spec.pass_percent) || 100;
+  const passed = percent >= required;
+  const failed = results.filter((r) => !r.passed);
+  let explanation = passed
+    ? `Ajoyib! ${questions.length} ta savoldan ${correct} tasiga to'g'ri javob berdingiz (${percent}%). Mavzu muvaffaqiyatli o'zlashtirildi!`
+    : `${questions.length} ta savoldan ${correct} tasiga to'g'ri javob berdingiz (${percent}%). O'tish uchun kamida ${required}% kerak. Darsni qayta ko'rib chiqing va yana urinib ko'ring.`;
+  if (failed.length) {
+    explanation += `\n\n${failed.map((r) => `• ${r.name}: ${r.message}`).join("\n")}`;
+  }
+  return { passed, tests: results, explanation, score: { correct, total: questions.length, percent, required } };
+}
+
 export function runChecks(language, code, spec) {
   const source = String(code || "");
   if (source.trim().length < 2) {
@@ -310,6 +356,7 @@ export function runChecks(language, code, spec) {
   try {
     if (language === "html") return checkHtml(source, spec);
     if (language === "css") return checkCss(source, spec);
+    if (language === "quiz") return checkQuiz(source, spec);
     return checkJs(source, spec);
   } catch (error) {
     return pack([{ name: "Tekshiruv", passed: false, message: `Tekshiruv paytida kutilmagan xato: ${error.message}` }]);
@@ -329,5 +376,17 @@ export function validateSpec(language, spec) {
     if (!Array.isArray(spec.checks) || spec.checks.length === 0) return "checks ro'yxati bo'lishi kerak.";
     return "";
   }
-  return "Til javascript, html yoki css bo'lishi kerak.";
+  if (language === "quiz") {
+    if (!Array.isArray(spec.questions) || spec.questions.length === 0) return "Testda questions ro'yxati bo'lishi kerak.";
+    for (const item of spec.questions) {
+      if (!item.q || !Array.isArray(item.options) || item.options.length < 2) {
+        return "Har bir savolda q va kamida 2 ta options bo'lishi kerak.";
+      }
+      if (!Number.isInteger(item.answer) || item.answer < 0 || item.answer >= item.options.length) {
+        return "Har bir savolda answer — to'g'ri variant indeksi (0 dan boshlab) bo'lishi kerak.";
+      }
+    }
+    return "";
+  }
+  return "Til javascript, html, css yoki quiz bo'lishi kerak.";
 }

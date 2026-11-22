@@ -45,6 +45,14 @@ export default function Header({
           <span>⚙️</span>
           <span>Backend</span>
         </button>
+        <button
+          className={`track-btn ${currentTrack === "savodxonlik" ? "active-savodxonlik" : ""}`}
+          onClick={() => onSelectTrack("savodxonlik")}
+          title="Kompyuter savodxonligi darslari va testlari"
+        >
+          <span>💻</span>
+          <span>Kompyuter savodxonligi</span>
+        </button>
       </div>
 
       {/* Actions */}

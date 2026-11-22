@@ -1,4 +1,5 @@
 import React from "react";
+import { getTrackTheme } from "../trackTheme.js";
 
 export default function TrackHeader({
   track,
@@ -6,7 +7,7 @@ export default function TrackHeader({
   onClaimCertificate,
   hasCertificate,
 }) {
-  const isFrontend = track?.slug === "frontend";
+  const theme = getTrackTheme(track?.slug);
   const completed = progress?.completed_tasks || 0;
   const total = progress?.total_tasks || 0;
   const percentage = progress?.percentage || 0;
@@ -17,8 +18,8 @@ export default function TrackHeader({
   return (
     <div className="track-banner">
       <div className="track-info">
-        <div className={`track-icon-box ${isFrontend ? "track-icon-frontend" : "track-icon-backend"}`}>
-          {isFrontend ? "🎨" : "⚙️"}
+        <div className={`track-icon-box track-icon-${theme.slug}`}>
+          {theme.icon}
         </div>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -29,9 +30,9 @@ export default function TrackHeader({
                 fontWeight: "700",
                 padding: "2px 8px",
                 borderRadius: "12px",
-                background: isFrontend ? "var(--red-light)" : "var(--blue-light)",
-                color: isFrontend ? "var(--red-500)" : "var(--blue-500)",
-                border: `1px solid ${isFrontend ? "var(--red-500)" : "var(--blue-500)"}`,
+                background: theme.light,
+                color: theme.color,
+                border: `1px solid ${theme.color}`,
               }}
             >
               {track?.level || "Boshlang'ich"}
@@ -50,13 +51,13 @@ export default function TrackHeader({
             <span style={{ color: "var(--text-secondary)", fontWeight: "600" }}>
               Progress: <strong style={{ color: "var(--text-primary)" }}>{completed}/{total}</strong> topshiriq ({percentage}%)
             </span>
-            <span style={{ color: isFrontend ? "var(--red-500)" : "var(--blue-500)", fontWeight: "700" }}>
+            <span style={{ color: theme.color, fontWeight: "700" }}>
               {earnedPoints}/{totalPoints} ball
             </span>
           </div>
           <div className="progress-bar-bg">
             <div
-              className={`progress-bar-fill ${isFrontend ? "fill-frontend" : "fill-backend"}`}
+              className={`progress-bar-fill fill-${theme.slug}`}
               style={{ width: `${percentage}%` }}
             />
           </div>

@@ -1,4 +1,5 @@
 import React from "react";
+import { getTrackTheme } from "../trackTheme.js";
 
 export default function ModuleSidebar({
   trackSlug,
@@ -8,7 +9,7 @@ export default function ModuleSidebar({
   onSelectTask,
   onRetry,
 }) {
-  const isFrontend = trackSlug === "frontend";
+  const theme = getTrackTheme(trackSlug);
   const allTasksCount = modules?.reduce((sum, m) => sum + (m.tasks?.length || 0), 0) || 0;
 
   return (
@@ -16,14 +17,14 @@ export default function ModuleSidebar({
       {/* Sidebar Header */}
       <div className="sidebar-header">
         <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <span>{isFrontend ? "🎨" : "⚙️"}</span>
-          <span>{isFrontend ? "Frontend Darslari" : "Backend Darslari"}</span>
+          <span>{theme.icon}</span>
+          <span>{theme.label}</span>
         </span>
         <span
           style={{
             fontSize: "11px",
-            background: isFrontend ? "var(--red-light)" : "var(--blue-light)",
-            color: isFrontend ? "var(--red-500)" : "var(--blue-500)",
+            background: theme.light,
+            color: theme.color,
             padding: "2px 8px",
             borderRadius: "10px",
             fontWeight: "700",
@@ -93,11 +94,7 @@ export default function ModuleSidebar({
                       style={{
                         cursor: "pointer",
                         userSelect: "none",
-                        backgroundColor: isActive
-                          ? isFrontend
-                            ? "var(--red-light)"
-                            : "var(--blue-light)"
-                          : undefined,
+                        backgroundColor: isActive ? theme.light : undefined,
                       }}
                     >
                       <div className="task-item-left">
@@ -108,9 +105,7 @@ export default function ModuleSidebar({
                           style={{
                             fontWeight: isActive ? "800" : isPassed ? "500" : "600",
                             color: isActive
-                              ? isFrontend
-                                ? "var(--red-500)"
-                                : "var(--blue-500)"
+                              ? theme.color
                               : isPassed
                               ? "var(--text-secondary)"
                               : "var(--text-primary)",
@@ -131,18 +126,22 @@ export default function ModuleSidebar({
                             background:
                               task.language === "html"
                                 ? "rgba(239, 68, 68, 0.15)"
+                                : task.language === "quiz"
+                                ? "var(--green-light)"
                                 : task.language === "css"
                                 ? "rgba(59, 130, 246, 0.15)"
                                 : "rgba(245, 158, 11, 0.15)",
                             color:
                               task.language === "html"
                                 ? "var(--red-500)"
+                                : task.language === "quiz"
+                                ? "var(--green-500)"
                                 : task.language === "css"
                                 ? "var(--blue-500)"
                                 : "#eab308",
                           }}
                         >
-                          {task.language}
+                          {task.language === "quiz" ? "test" : task.language}
                         </span>
                         <span style={{ fontSize: "11px", fontWeight: "600", color: "var(--text-muted)" }}>
                           +{task.points}
