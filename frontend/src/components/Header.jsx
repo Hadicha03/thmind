@@ -51,12 +51,13 @@ export default function Header({
           title="Kompyuter savodxonligi darslari va testlari"
         >
           <span>💻</span>
-          <span>Kompyuter savodxonligi</span>
+          <span className="label-full">Kompyuter savodxonligi</span>
+          <span className="label-short">Savodxonlik</span>
         </button>
       </div>
 
       {/* Actions */}
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+      <div className="header-actions" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
         {/* Certificate shortcut */}
         <button
           className="btn btn-secondary"
@@ -65,7 +66,7 @@ export default function Header({
           style={{ fontSize: "13px", padding: "6px 12px" }}
         >
           <span>🎓</span>
-          <span>Sertifikatlar</span>
+          <span className="btn-label">Sertifikatlar</span>
           {earnedCertificatesCount > 0 && (
             <span
               style={{
@@ -90,7 +91,7 @@ export default function Header({
           style={{ fontSize: "13px", padding: "6px 10px" }}
         >
           <span>🔍</span>
-          <span>Tekshiruv</span>
+          <span className="btn-label">Tekshiruv</span>
         </button>
 
         {/* Theme Toggle (Dark / Light) */}
@@ -111,7 +112,7 @@ export default function Header({
           style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 12px" }}
         >
           <span>👤</span>
-          <span style={{ maxWidth: "100px", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <span className="btn-label" style={{ maxWidth: "100px", overflow: "hidden", textOverflow: "ellipsis" }}>
             {userName || "O'quvchi"}
           </span>
           <span
@@ -136,7 +137,7 @@ export default function Header({
           style={{ fontSize: "13px", padding: "6px 14px" }}
         >
           <span>🛡️</span>
-          <span>Admin</span>
+          <span className="btn-label">Admin</span>
         </button>
       </div>
     </header>

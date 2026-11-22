@@ -925,6 +925,10 @@ body {
   }
 }
 
+.label-short {
+  display: none;
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .workspace-layout {
@@ -935,5 +939,187 @@ body {
   }
   .instructions-pane {
     max-height: 250px;
+  }
+}
+
+/* Mobile (telefon) */
+@media (max-width: 768px) {
+  body {
+    overflow-x: hidden;
+  }
+  .app-header {
+    height: auto;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+  .brand-subtitle,
+  .btn-label,
+  .label-full {
+    display: none;
+  }
+  .label-short {
+    display: inline;
+  }
+  .brand-logo-badge {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+  .brand-title {
+    font-size: 17px;
+  }
+  .header-actions {
+    gap: 4px !important;
+  }
+  .header-actions .btn {
+    padding: 6px 8px !important;
+    font-size: 13px !important;
+  }
+  .track-switcher {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+  }
+  .track-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 8px 6px;
+    font-size: 13px;
+    gap: 4px;
+    white-space: nowrap;
+  }
+
+  .app-container {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+  .track-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+  }
+  .track-info {
+    gap: 10px;
+  }
+  .track-progress-container {
+    max-width: none;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .track-progress-container .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .workspace-layout {
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+  }
+  .modules-sidebar {
+    max-height: 45vh;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .editor-main-area {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+  .instructions-pane {
+    max-height: none;
+    overflow: visible;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+    padding: 16px 14px;
+  }
+  .instructions-pane > div:first-child {
+    gap: 8px;
+  }
+  .instructions-title {
+    font-size: 16px;
+  }
+  .editor-output-pane {
+    height: auto;
+    overflow: visible;
+  }
+  .editor-toolbar {
+    height: auto;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+  .editor-toolbar > div:last-child {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .editor-container {
+    flex: none;
+    height: 360px;
+  }
+  .quiz-container {
+    flex: none;
+    overflow: visible;
+    padding: 12px;
+  }
+  .quiz-option {
+    padding: 10px 12px;
+  }
+  .results-pane {
+    height: auto;
+    min-height: 220px;
+  }
+  .results-tabs {
+    overflow-x: auto;
+    flex-shrink: 0;
+  }
+  .results-tab-btn {
+    white-space: nowrap;
+    padding: 6px 10px;
+  }
+  .results-content {
+    max-height: none;
+  }
+
+  .modal-overlay {
+    padding: 8px;
+    align-items: flex-start;
+    overflow-y: auto;
+  }
+  .modal-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: none;
+  }
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .modal-footer {
+    flex-wrap: wrap;
+  }
+  .certificate-container {
+    padding: 16px !important;
+  }
+  .cert-title {
+    font-size: 22px;
+  }
+  .cert-name {
+    font-size: 24px;
+  }
+  .cert-footer {
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+  }
+  .live-preview-frame {
+    min-height: 300px;
   }
 }

@@ -308,6 +308,9 @@ export default function App() {
           onSelectTask={(task) => {
             setCurrentTask(task);
             setLastResult(null);
+            if (window.matchMedia("(max-width: 768px)").matches) {
+              setTimeout(() => document.querySelector(".editor-main-area")?.scrollIntoView({ behavior: "smooth" }), 50);
+            }
           }}
           onRetry={() => fetchTrack(currentTrackSlug)}
         />
