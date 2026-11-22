@@ -4,6 +4,8 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "check": "npm run check --prefix backend"
+    "check": "npm run check --prefix backend",
+    "build": "npm install --prefix backend && npm install --include=dev --prefix frontend && npm run build --prefix frontend",
+    "start": "node backend/src/index.js"
   }
 }

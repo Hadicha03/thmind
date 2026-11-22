@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: thmind
+    runtime: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /api/tracks
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: NODE_VERSION
+        value: 22.11.0

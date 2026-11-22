@@ -1,11 +1,17 @@
 import express from "express";
 import cors from "cors";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { db } from "./db.js";
 import { runChecks, validateSpec } from "./checker.js";
 import { analyzeCodeWithAi } from "./ai.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+const HOST = process.env.HOST || "127.0.0.1";
+const MASTER_KEY = process.env.ADMIN_MASTER_KEY || "";
+const isMasterKey = (value) => Boolean(MASTER_KEY) && value === MASTER_KEY;
 
 app.use(cors());
 app.use(express.json({ limit: "5mb" }));
@@ -34,7 +40,7 @@ function requireAdmin(req, res, next) {
     provided = authHeader.slice(7).trim();
   }
 
-  if (provided === validPassword || provided === "thmind-master-key-2026") {
+  if (provided === validPassword || isMasterKey(provided)) {
     return next();
   }
 
@@ -248,7 +254,7 @@ app.post("/api/admin/login", (req, res) => {
   const currentSettings = db.getFullSettings();
   const validPassword = currentSettings.admin_password || "admin";
 
-  if (password === validPassword || password === "thmind-master-key-2026") {
+  if (password === validPassword || isMasterKey(password)) {
     return res.json({
       success: true,
       message: "Admin tizimiga xush kelibsiz",
@@ -396,8 +402,15 @@ process.on("unhandledRejection", (reason) => {
   console.error("⚠️ [Kutilmagan rad etish (unhandledRejection)]:", reason);
 });
 
-const server = app.listen(PORT, "127.0.0.1", () => {
-  console.log(`🚀 TH Mind Backend serveri ishga tushdi: http://127.0.0.1:${PORT}`);
+// Production: serve the built frontend (npm run build) from the same server
+const distDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../frontend/dist");
+if (fs.existsSync(path.join(distDir, "index.html"))) {
+  app.use(express.static(distDir));
+  app.get(/^\/(?!api\/).*/, (req, res) => res.sendFile(path.join(distDir, "index.html")));
+}
+
+const server = app.listen(PORT, HOST, () => {
+  console.log(`🚀 TH Mind Backend serveri ishga tushdi: http://${HOST}:${PORT}`);
 });
 
 server.on("error", (err) => {

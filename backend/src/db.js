@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import { catalog } from "./seed.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dataDir = path.resolve(__dirname, "../data");
+const dataDir = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.resolve(__dirname, "../data");
 const dbPath = path.join(dataDir, "db.json");
 
 function ensureDirectory() {
