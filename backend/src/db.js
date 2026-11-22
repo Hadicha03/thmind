@@ -88,7 +88,7 @@ function buildInitialData() {
       gemini_api_key: "",
       gemini_model: "gemini-1.5-flash",
       use_real_ai: false,
-      admin_password: "admin", // default easy admin password
+      admin_password: process.env.ADMIN_PASSWORD || "admin", // default easy admin password
       system_prompt:
         "Siz TH Mind platformasining mehribon, tajribali va do'stona AI ustozisiz. O'quvchilarga xatolarini o'zbek tilida aniq, tushunarli va rag'batlantiruvchi tarzda tushuntirib bering.",
     },
