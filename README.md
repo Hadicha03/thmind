@@ -4,6 +4,13 @@
 
 ---
 
+## ⚙️ Talablar
+
+- Node.js va npm o'rnatilgan bo'lishi kerak.
+- Birinchi ishga tushirishda backend va frontend paketlari avtomatik o'rnatiladi; buning uchun internetga ulanish zarur.
+
+---
+
 ## 🎨 Asosiy Xususiyatlar
 
 1. **Ustuvor Ranglar (Qizil va Ko'k):**
@@ -54,16 +61,15 @@
 
 ### 1-usul: `start.bat` orqali (eng oson)
 Fayllar orasidagi `start.bat` fayliga sichqoncha bilan ikki marta bosing. U avtomatik tarzda:
-- Backend serverini (`http://127.0.0.1:4000`)
-- Frontend dasturini (`http://127.0.0.1:5173`)
-ishga tushiradi!
+- Backend va frontend serverlarini ishga tushiradi (port band bo'lsa, bo'sh port tanlaydi).
+- Terminalda ko'rsatilgan Frontend manzilini brauzerda oching.
 
 ### 2-usul: Buyruqlar satri orqali
 ```bash
 npm run dev
 ```
 
-Brauzerda oching: **`http://127.0.0.1:5173`**
+Brauzerda Dev Manager ko'rsatgan Frontend manzilini oching (odatda **`http://127.0.0.1:5173`**).
 
 ---
 
