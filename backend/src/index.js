@@ -47,6 +47,66 @@ function requireAdmin(req, res, next) {
   return res.status(401).json({ error: "Admin ruxsati talab qilinadi. Parol noto'g'ri." });
 }
 
+function bearerToken(req) {
+  const auth = req.headers.authorization || "";
+  return auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
+}
+
+function requireStudent(req, res, next) {
+  const user = db.getUserBySession(bearerToken(req));
+  if (!user) {
+    return res.status(401).json({ error: "Iltimos, avval tizimga kiring." });
+  }
+  req.user = user;
+  next();
+}
+
+// ==========================================
+// STUDENT AUTH API
+// ==========================================
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+app.post("/api/auth/register", (req, res) => {
+  const { name = "", email = "", password = "" } = req.body || {};
+  if (String(name).trim().length < 2) {
+    return res.status(400).json({ error: "Ism kamida 2 ta harfdan iborat bo'lishi kerak." });
+  }
+  if (!EMAIL_RE.test(String(email).trim())) {
+    return res.status(400).json({ error: "Email manzil noto'g'ri kiritildi." });
+  }
+  if (String(password).length < 6) {
+    return res.status(400).json({ error: "Parol kamida 6 ta belgidan iborat bo'lishi kerak." });
+  }
+  const result = db.registerUser({ name, email, password });
+  if (result.error) return res.status(409).json({ error: result.error });
+  res.json({ user: result.user, token: db.createSession(result.user.id) });
+});
+
+app.post("/api/auth/login", (req, res) => {
+  const { email = "", password = "" } = req.body || {};
+  const result = db.authenticateUser(email, password);
+  if (result.error) return res.status(401).json({ error: result.error });
+  res.json({ user: result.user, token: db.createSession(result.user.id) });
+});
+
+app.get("/api/auth/me", requireStudent, (req, res) => {
+  res.json({ user: req.user });
+});
+
+app.post("/api/auth/logout", (req, res) => {
+  db.deleteSession(bearerToken(req));
+  res.json({ success: true });
+});
+
+app.put("/api/auth/profile", requireStudent, (req, res) => {
+  const name = String(req.body?.name || "").trim();
+  if (name.length < 2) {
+    return res.status(400).json({ error: "Ism kamida 2 ta harfdan iborat bo'lishi kerak." });
+  }
+  res.json({ user: db.updateUserName(req.user.id, name) });
+});
+
 // ==========================================
 // PUBLIC & STUDENT API
 // ==========================================
@@ -110,10 +170,12 @@ app.get("/api/tasks/:id", (req, res) => {
 });
 
 // Submit code for checking and AI review
-app.post("/api/tasks/:id/check", async (req, res) => {
+app.post("/api/tasks/:id/check", requireStudent, async (req, res) => {
   try {
     const { id } = req.params;
-    const { code, userId = "student-1", userName = "O'quvchi" } = req.body;
+    const { code } = req.body;
+    const userId = req.user.id;
+    const userName = req.user.name;
 
     const task = db.getTaskById(id, true);
     if (!task) {
@@ -202,17 +264,20 @@ app.post("/api/tasks/:id/ai-help", async (req, res) => {
 });
 
 // Get user progress
-app.get("/api/progress/:userId", (req, res) => {
-  const { userId } = req.params;
-  const progress = db.getUserProgress(userId);
-  res.json(progress);
+app.get("/api/progress/me", requireStudent, (req, res) => {
+  res.json(db.getUserProgress(req.user.id));
+});
+
+app.get("/api/certificates/me", requireStudent, (req, res) => {
+  res.json(db.getCertificates(req.user.id));
 });
 
 // Claim certificate
-app.post("/api/certificates/claim", (req, res) => {
-  const { userId, userName, trackSlug } = req.body;
-  if (!userId || !trackSlug) {
-    return res.status(400).json({ error: "userId va trackSlug talab qilinadi" });
+app.post("/api/certificates/claim", requireStudent, (req, res) => {
+  const { userName, trackSlug } = req.body;
+  const userId = req.user.id;
+  if (!trackSlug) {
+    return res.status(400).json({ error: "trackSlug talab qilinadi" });
   }
 
   const result = db.issueCertificate({
@@ -238,7 +303,7 @@ app.get("/api/certificates/:id", (req, res) => {
 });
 
 // List certificates
-app.get("/api/certificates", (req, res) => {
+app.get("/api/certificates", requireAdmin, (req, res) => {
   const { userId } = req.query;
   const list = db.getCertificates(userId || null);
   res.json(list);

@@ -1,144 +1,79 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 export default function Header({
-  currentTrack,
-  onSelectTrack,
+  user,
+  userPoints,
   theme,
   onToggleTheme,
-  userName,
-  userPoints,
-  earnedCertificatesCount,
-  onOpenCertificates,
+  onGoHome,
   onOpenVerify,
-  onOpenProfile,
   onOpenAdmin,
+  onLogout,
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [menuOpen]);
+
+  const initials = (user?.name || "")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join("");
+
+  const run = (fn) => () => {
+    setMenuOpen(false);
+    fn();
+  };
+
   return (
     <header className="app-header">
-      {/* Brand Logo */}
-      <div className="brand" onClick={() => onSelectTrack("frontend")}>
-        <div className="brand-logo-badge">TH</div>
-        <div className="brand-text">
-          <div className="brand-title">
-            <span className="red">TH</span>
-            <span className="blue">Mind</span>
-          </div>
-          <div className="brand-subtitle">Dasturlash Akademiyasi</div>
-        </div>
-      </div>
+      <button className="brand" onClick={onGoHome} title="Bosh sahifa">
+        <span className="brand-logo-badge">TH</span>
+        <span className="brand-title">
+          <span className="red">TH</span>
+          <span className="blue">Mind</span>
+        </span>
+      </button>
 
-      {/* Track Switcher (Frontend / Backend) */}
-      <div className="track-switcher">
+      <div className="header-actions">
+        <span className="points-chip" title="Yig'ilgan ballar">⭐ {userPoints}</span>
         <button
-          className={`track-btn ${currentTrack === "frontend" ? "active-frontend" : ""}`}
-          onClick={() => onSelectTrack("frontend")}
-          title="Frontend dasturlash darslari va topshiriqlari"
-        >
-          <span>🎨</span>
-          <span>Frontend</span>
-        </button>
-        <button
-          className={`track-btn ${currentTrack === "backend" ? "active-backend" : ""}`}
-          onClick={() => onSelectTrack("backend")}
-          title="Backend dasturlash darslari va topshiriqlari"
-        >
-          <span>⚙️</span>
-          <span>Backend</span>
-        </button>
-        <button
-          className={`track-btn ${currentTrack === "savodxonlik" ? "active-savodxonlik" : ""}`}
-          onClick={() => onSelectTrack("savodxonlik")}
-          title="Kompyuter savodxonligi darslari va testlari"
-        >
-          <span>💻</span>
-          <span className="label-full">Kompyuter savodxonligi</span>
-          <span className="label-short">Savodxonlik</span>
-        </button>
-      </div>
-
-      {/* Actions */}
-      <div className="header-actions" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-        {/* Certificate shortcut */}
-        <button
-          className="btn btn-secondary"
-          onClick={onOpenCertificates}
-          title="Mening sertifikatlarim"
-          style={{ fontSize: "13px", padding: "6px 12px" }}
-        >
-          <span>🎓</span>
-          <span className="btn-label">Sertifikatlar</span>
-          {earnedCertificatesCount > 0 && (
-            <span
-              style={{
-                background: "var(--red-600)",
-                color: "white",
-                borderRadius: "10px",
-                padding: "1px 6px",
-                fontSize: "11px",
-                fontWeight: "700",
-              }}
-            >
-              {earnedCertificatesCount}
-            </span>
-          )}
-        </button>
-
-        {/* Certificate Verify */}
-        <button
-          className="btn btn-ghost"
-          onClick={onOpenVerify}
-          title="Sertifikat haqiqiyligini tekshirish"
-          style={{ fontSize: "13px", padding: "6px 10px" }}
-        >
-          <span>🔍</span>
-          <span className="btn-label">Tekshiruv</span>
-        </button>
-
-        {/* Theme Toggle (Dark / Light) */}
-        <button
-          className="btn btn-ghost"
+          className="icon-btn"
           onClick={onToggleTheme}
-          title={theme === "dark" ? "Kunduzgi (Light) rejimga o'tish" : "Tungi (Dark) rejimga o'tish"}
-          style={{ padding: "6px 10px", fontSize: "16px" }}
+          title={theme === "dark" ? "Kunduzgi rejim" : "Tungi rejim"}
         >
           {theme === "dark" ? "☀️" : "🌙"}
         </button>
 
-        {/* Student Profile */}
-        <button
-          className="btn btn-secondary"
-          onClick={onOpenProfile}
-          title="Talaba profili"
-          style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 12px" }}
-        >
-          <span>👤</span>
-          <span className="btn-label" style={{ maxWidth: "100px", overflow: "hidden", textOverflow: "ellipsis" }}>
-            {userName || "O'quvchi"}
-          </span>
-          <span
-            style={{
-              background: "var(--badge-blue-bg)",
-              color: "var(--blue-500)",
-              borderRadius: "6px",
-              padding: "2px 6px",
-              fontSize: "11px",
-              fontWeight: "700",
-            }}
-          >
-            {userPoints} ball
-          </span>
-        </button>
-
-        {/* Admin Panel button */}
-        <button
-          className="btn btn-primary"
-          onClick={onOpenAdmin}
-          title="Admin paneli (kurslarni va topshiriqlarni boshqarish)"
-          style={{ fontSize: "13px", padding: "6px 14px" }}
-        >
-          <span>🛡️</span>
-          <span className="btn-label">Admin</span>
-        </button>
+        <div className="menu-wrap" ref={menuRef}>
+          <button className="avatar-btn" onClick={() => setMenuOpen((v) => !v)} aria-haspopup="menu" aria-expanded={menuOpen}>
+            <span className="avatar">{initials || "👤"}</span>
+            <span className="avatar-name">{user?.name}</span>
+            <span className="caret">▾</span>
+          </button>
+          {menuOpen && (
+            <div className="dropdown" role="menu">
+              <div className="dropdown-head">
+                <strong>{user?.name}</strong>
+                <span>{user?.email}</span>
+              </div>
+              <button role="menuitem" onClick={run(onGoHome)}>🏠 Profil va kurslar</button>
+              <button role="menuitem" onClick={run(onOpenVerify)}>🔍 Sertifikatni tekshirish</button>
+              <button role="menuitem" onClick={run(onOpenAdmin)}>🛡️ Admin panel</button>
+              <div className="dropdown-sep" />
+              <button role="menuitem" className="danger" onClick={run(onLogout)}>🚪 Chiqish</button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

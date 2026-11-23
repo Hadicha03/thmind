@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Header from "./components/Header.jsx";
 import TrackHeader from "./components/TrackHeader.jsx";
 import ModuleSidebar from "./components/ModuleSidebar.jsx";
 import Workspace from "./components/Workspace.jsx";
 import CertificateModal from "./components/CertificateModal.jsx";
 import CertificateVerifyModal from "./components/CertificateVerifyModal.jsx";
-import UserProfileModal from "./components/UserProfileModal.jsx";
 import AdminModal from "./components/AdminModal.jsx";
+import AuthPage from "./components/AuthPage.jsx";
+import Dashboard from "./components/Dashboard.jsx";
+import { api, getToken, setToken } from "./api.js";
 
 export default function App() {
   // Theme (Dark / Light)
@@ -23,364 +25,280 @@ export default function App() {
     localStorage.setItem("thmind-theme", theme);
   }, [theme]);
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
-  };
+  const toggleTheme = () => setTheme((prev) => (prev === "dark" ? "light" : "dark"));
 
-  // Student Profile
-  const [userId] = useState(() => {
-    let id = localStorage.getItem("thmind_user_id");
-    if (!id) {
-      id = "student-" + Math.floor(1000 + Math.random() * 9000);
-      localStorage.setItem("thmind_user_id", id);
+  // Auth
+  const [user, setUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    if (!getToken()) {
+      setAuthChecked(true);
+      return;
     }
-    return id;
-  });
+    api("/api/auth/me")
+      .then((data) => setUser(data.user))
+      .catch(() => setToken(""))
+      .finally(() => setAuthChecked(true));
+  }, []);
 
-  const [userName, setUserName] = useState(() => {
-    return localStorage.getItem("thmind_user_name") || "Dasturchi Talaba";
-  });
-
-  const handleSaveUserName = (name) => {
-    setUserName(name);
-    localStorage.setItem("thmind_user_name", name);
+  const handleAuthenticated = ({ user: u, token }) => {
+    setToken(token);
+    setUser(u);
+    setView("dashboard");
   };
 
-  // Tracks & Active Track
-  const [currentTrackSlug, setCurrentTrackSlug] = useState("frontend");
+  const handleLogout = async () => {
+    try {
+      await api("/api/auth/logout", { method: "POST" });
+    } catch {
+      /* ignore */
+    }
+    setToken("");
+    setUser(null);
+    setPassedTaskIds([]);
+    setProgressByTrack({});
+    setCertificates([]);
+  };
+
+  const handleSaveName = async (name) => {
+    const data = await api("/api/auth/profile", { method: "PUT", body: { name } });
+    setUser(data.user);
+  };
+
+  // Navigation: "dashboard" (profile + courses) or "course"
+  const [view, setView] = useState("dashboard");
+  const [tracks, setTracks] = useState([]);
+  const [currentTrackSlug, setCurrentTrackSlug] = useState(
+    () => localStorage.getItem("thmind_last_track") || "frontend"
+  );
   const [trackData, setTrackData] = useState(null);
   const [currentTask, setCurrentTask] = useState(null);
-  const [isLoadingTrack, setIsLoadingTrack] = useState(true);
+  const [isLoadingTrack, setIsLoadingTrack] = useState(false);
   const [fetchError, setFetchError] = useState("");
 
-  // User Progress
+  // Progress & certificates
   const [passedTaskIds, setPassedTaskIds] = useState([]);
   const [progressByTrack, setProgressByTrack] = useState({});
-
-  // Submissions & Workspace
-  const [isChecking, setIsChecking] = useState(false);
-  const [lastResult, setLastResult] = useState(null);
-
-  // Certificates
   const [certificates, setCertificates] = useState([]);
   const [selectedCertForModal, setSelectedCertForModal] = useState(null);
+
+  // Workspace
+  const [isChecking, setIsChecking] = useState(false);
+  const [lastResult, setLastResult] = useState(null);
 
   // Modals
   const [showCertModal, setShowCertModal] = useState(false);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
-  const [showProfileModal, setShowProfileModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
 
-  // Fetch track details
+  const fetchProgress = useCallback(async () => {
+    try {
+      const data = await api("/api/progress/me");
+      setPassedTaskIds(data.passed_tasks || []);
+      setProgressByTrack(data.progress_by_track || {});
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
+  const fetchCertificates = useCallback(async () => {
+    try {
+      setCertificates(await api("/api/certificates/me"));
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
   const fetchTrack = async (slug) => {
     setIsLoadingTrack(true);
     setFetchError("");
     try {
-      const res = await fetch(`/api/tracks/${slug}`);
-      if (!res.ok) throw new Error(`Yo'nalishni yuklab bo'lmadi (Status: ${res.status})`);
-      const data = await res.json();
+      const data = await api(`/api/tracks/${slug}`);
       setTrackData(data);
-
-      // Select first task or first incomplete task
-      const allTasks = [];
-      data.modules?.forEach((m) => {
-        (m.tasks || []).forEach((t) => allTasks.push(t));
-      });
-
-      if (allTasks.length > 0) {
-        // If currentTask doesn't belong to this track, switch to first of this track
-        if (!currentTask || currentTask.track_slug !== slug) {
-          const firstIncomplete = allTasks.find((t) => !passedTaskIds.includes(t.id));
-          setCurrentTask(firstIncomplete || allTasks[0]);
-        }
+      const allTasks = (data.modules || []).flatMap((m) => m.tasks || []);
+      if (allTasks.length > 0 && (!currentTask || currentTask.track_slug !== slug)) {
+        setCurrentTask(allTasks.find((t) => !passedTaskIds.includes(t.id)) || allTasks[0]);
       }
       setLastResult(null);
     } catch (err) {
-      console.error("fetchTrack error:", err);
       setFetchError(err.message);
     } finally {
       setIsLoadingTrack(false);
     }
   };
 
-  // Fetch progress
-  const fetchProgress = async () => {
-    try {
-      const res = await fetch(`/api/progress/${userId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setPassedTaskIds(data.passed_tasks || []);
-        setProgressByTrack(data.progress_by_track || {});
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // Fetch user certificates
-  const fetchCertificates = async () => {
-    try {
-      const res = await fetch(`/api/certificates?userId=${userId}`);
-      if (res.ok) {
-        const list = await res.json();
-        setCertificates(list);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   useEffect(() => {
+    if (!user) return;
     fetchProgress();
     fetchCertificates();
-  }, [userId]);
+    api("/api/tracks").then(setTracks).catch((err) => setFetchError(err.message));
+  }, [user?.id]);
 
   useEffect(() => {
-    fetchTrack(currentTrackSlug);
-  }, [currentTrackSlug]);
+    if (user && view === "course") fetchTrack(currentTrackSlug);
+  }, [currentTrackSlug, view, user?.id]);
 
-  // Code Check handler
+  const openTrack = (slug) => {
+    localStorage.setItem("thmind_last_track", slug);
+    if (slug !== currentTrackSlug) {
+      setCurrentTask(null);
+      setTrackData(null);
+    }
+    setCurrentTrackSlug(slug);
+    setView("course");
+    window.scrollTo(0, 0);
+  };
+
   const handleCheckCode = async (code) => {
     if (!currentTask) return;
     setIsChecking(true);
     try {
-      const res = await fetch(`/api/tasks/${currentTask.id}/check`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code,
-          userId,
-          userName,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Tekshirishda xatolik");
-
+      const data = await api(`/api/tasks/${currentTask.id}/check`, { method: "POST", body: { code } });
       setLastResult(data);
-
       if (data.passed) {
         setPassedTaskIds((prev) => [...new Set([...prev, currentTask.id])]);
         await fetchProgress();
-
-        if (data.course_completed) {
-          setTimeout(() => {
-            setShowCertModal(true);
-          }, 800);
-        }
+        if (data.course_completed) setTimeout(() => setShowCertModal(true), 800);
       }
     } catch (err) {
+      if (err.status === 401) handleLogout();
       alert("Tekshirishda xatolik yuz berdi: " + err.message);
     } finally {
       setIsChecking(false);
     }
   };
 
-  // AI Help handler
-  const handleAskAiHelp = async (code, question) => {
-    if (!currentTask) return;
-    const res = await fetch(`/api/tasks/${currentTask.id}/ai-help`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        code,
-        userId,
-        question,
-      }),
-    });
-    if (!res.ok) {
-      const errJson = await res.json();
-      throw new Error(errJson.error || "AI javob bera olmadi");
-    }
-    return await res.json();
-  };
+  const handleAskAiHelp = (code, question) =>
+    api(`/api/tasks/${currentTask.id}/ai-help`, { method: "POST", body: { code, question } });
 
-  // Claim certificate handler
   const handleClaimCertificate = async (customName, trackSlug) => {
-    const res = await fetch("/api/certificates/claim", {
+    const data = await api("/api/certificates/claim", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId,
-        userName: customName,
-        trackSlug,
-      }),
+      body: { userName: customName, trackSlug },
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Sertifikat berishda xatolik");
-
-    handleSaveUserName(customName);
     fetchCertificates();
     return data;
   };
 
-  // Reset student progress
-  const handleResetProgress = () => {
-    if (window.confirm("Barcha erishilgan natijalaringizni tozalashga ishonchingiz komilmi?")) {
-      setPassedTaskIds([]);
-      setCertificates([]);
-      setLastResult(null);
-      localStorage.removeItem("thmind_user_id");
-      window.location.reload();
-    }
-  };
+  if (!authChecked) {
+    return <div className="splash">Yuklanmoqda...</div>;
+  }
 
-  // Current track progress
+  if (!user) {
+    return <AuthPage onAuthenticated={handleAuthenticated} theme={theme} onToggleTheme={toggleTheme} />;
+  }
+
   const currentTrackProgress = progressByTrack[currentTrackSlug] || {
     total_tasks: trackData?.total_tasks || 0,
     completed_tasks: 0,
     percentage: 0,
-    total_points: trackData?.total_points || 0,
-    earned_points: 0,
-    is_completed: false,
   };
-
-  const existingCertForCurrentTrack = certificates.find(
-    (c) => c.track_slug === currentTrackSlug
-  );
-
-  const totalUserPoints = Object.values(progressByTrack).reduce(
-    (acc, cur) => acc + (cur.earned_points || 0),
-    0
-  );
+  const existingCertForCurrentTrack = certificates.find((c) => c.track_slug === currentTrackSlug);
+  const totalUserPoints = Object.values(progressByTrack).reduce((acc, cur) => acc + (cur.earned_points || 0), 0);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
-      {/* 1. Header (Red & Blue Theme, Track switcher, Actions) */}
+    <div className={`app-shell view-${view}`}>
       <Header
-        currentTrack={currentTrackSlug}
-        onSelectTrack={(slug) => {
-          if (slug !== currentTrackSlug) {
-            setCurrentTrackSlug(slug);
-          }
-        }}
+        user={user}
+        userPoints={totalUserPoints}
         theme={theme}
         onToggleTheme={toggleTheme}
-        userName={userName}
-        userPoints={totalUserPoints}
-        earnedCertificatesCount={certificates.length}
-        onOpenCertificates={() => {
-          if (certificates.length > 0) {
-            setSelectedCertForModal(certificates[0]);
-            setShowCertModal(true);
-          } else {
-            setShowProfileModal(true);
-          }
-        }}
+        onGoHome={() => setView("dashboard")}
         onOpenVerify={() => setShowVerifyModal(true)}
-        onOpenProfile={() => setShowProfileModal(true)}
         onOpenAdmin={() => setShowAdminModal(true)}
+        onLogout={handleLogout}
       />
 
-      {/* Network error banner if any */}
       {fetchError && (
-        <div style={{ background: "var(--badge-red-bg)", color: "var(--badge-red)", padding: "8px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
-          <span>⚠️ Serverga ulanishda uzilish: {fetchError}</span>
-          <button className="btn btn-secondary" onClick={() => fetchTrack(currentTrackSlug)} style={{ padding: "4px 10px", fontSize: "12px" }}>
+        <div className="error-banner">
+          <span>⚠️ Serverga ulanishda xatolik: {fetchError}</span>
+          <button className="btn btn-secondary btn-sm" onClick={() => (view === "course" ? fetchTrack(currentTrackSlug) : window.location.reload())}>
             🔄 Qayta urinish
           </button>
         </div>
       )}
 
-      {/* 2. Track Banner (Progress, Stats, Certificate button) */}
-      <TrackHeader
-        track={trackData?.track}
-        progress={currentTrackProgress}
-        hasCertificate={Boolean(existingCertForCurrentTrack)}
-        onClaimCertificate={() => {
-          if (existingCertForCurrentTrack) {
-            setSelectedCertForModal(existingCertForCurrentTrack);
-          } else {
-            setSelectedCertForModal(null);
-          }
-          setShowCertModal(true);
-        }}
-      />
-
-      {/* 3. Main Split View (Sidebar + Code Workspace) */}
-      <div className="workspace-layout">
-        {/* Module Sidebar */}
-        <ModuleSidebar
-          trackSlug={currentTrackSlug}
-          modules={trackData?.modules}
-          currentTaskId={currentTask?.id}
-          passedTaskIds={passedTaskIds}
-          onSelectTask={(task) => {
-            setCurrentTask(task);
-            setLastResult(null);
-            if (window.matchMedia("(max-width: 768px)").matches) {
-              setTimeout(() => document.querySelector(".editor-main-area")?.scrollIntoView({ behavior: "smooth" }), 50);
-            }
+      {view === "dashboard" ? (
+        <Dashboard
+          user={user}
+          tracks={tracks}
+          progressByTrack={progressByTrack}
+          certificates={certificates}
+          totalPoints={totalUserPoints}
+          passedCount={passedTaskIds.length}
+          onOpenTrack={openTrack}
+          onSaveName={handleSaveName}
+          onViewCertificate={(cert) => {
+            setSelectedCertForModal(cert);
+            setShowCertModal(true);
           }}
-          onRetry={() => fetchTrack(currentTrackSlug)}
         />
-
-        {/* Code Editor & AI Evaluation Workspace */}
-        {currentTask ? (
-          <Workspace
-            task={currentTask}
-            isPassed={passedTaskIds.includes(currentTask.id)}
-            onCheckCode={handleCheckCode}
-            isChecking={isChecking}
-            lastResult={lastResult}
-            onAskAiHelp={handleAskAiHelp}
+      ) : (
+        <>
+          <TrackHeader
+            track={trackData?.track}
+            tracks={tracks}
+            progress={currentTrackProgress}
+            onBack={() => setView("dashboard")}
+            onSelectTrack={openTrack}
           />
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", gap: "12px" }}>
-            <div style={{ fontSize: "36px" }}>📝</div>
-            <div>{isLoadingTrack ? "Darslar yuklanmoqda..." : "Chap paneldagi topshiriqlardan birini tanlang"}</div>
-            {fetchError && (
-              <button className="btn btn-primary" onClick={() => fetchTrack(currentTrackSlug)}>
-                🔄 Qayta yuklash
-              </button>
+
+          <div className="workspace-layout">
+            <ModuleSidebar
+              trackSlug={currentTrackSlug}
+              modules={trackData?.modules}
+              currentTaskId={currentTask?.id}
+              passedTaskIds={passedTaskIds}
+              progress={currentTrackProgress}
+              hasCertificate={Boolean(existingCertForCurrentTrack)}
+              onSelectTask={(task) => {
+                setCurrentTask(task);
+                setLastResult(null);
+                if (window.matchMedia("(max-width: 900px)").matches) {
+                  setTimeout(() => document.querySelector(".editor-main-area")?.scrollIntoView({ behavior: "smooth" }), 50);
+                }
+              }}
+              onOpenCertificate={() => {
+                setSelectedCertForModal(existingCertForCurrentTrack || null);
+                setShowCertModal(true);
+              }}
+              onRetry={() => fetchTrack(currentTrackSlug)}
+            />
+
+            {currentTask ? (
+              <Workspace
+                task={currentTask}
+                isPassed={passedTaskIds.includes(currentTask.id)}
+                onCheckCode={handleCheckCode}
+                isChecking={isChecking}
+                lastResult={lastResult}
+                onAskAiHelp={handleAskAiHelp}
+              />
+            ) : (
+              <div className="empty-state">
+                {isLoadingTrack ? "Darslar yuklanmoqda..." : "Ro'yxatdan dars tanlang"}
+              </div>
             )}
           </div>
-        )}
-      </div>
+        </>
+      )}
 
-      {/* MODALS */}
-
-      {/* Certificate Modal */}
       {showCertModal && (
         <CertificateModal
           certificate={selectedCertForModal || existingCertForCurrentTrack}
-          trackSlug={currentTrackSlug}
-          trackTitle={trackData?.track?.title}
-          userName={userName}
+          trackSlug={selectedCertForModal?.track_slug || currentTrackSlug}
+          trackTitle={selectedCertForModal?.track_title || trackData?.track?.title}
+          userName={user.name}
           onClose={() => setShowCertModal(false)}
           onClaim={handleClaimCertificate}
         />
       )}
 
-      {/* Certificate Verification Modal */}
-      {showVerifyModal && (
-        <CertificateVerifyModal onClose={() => setShowVerifyModal(false)} />
-      )}
+      {showVerifyModal && <CertificateVerifyModal onClose={() => setShowVerifyModal(false)} />}
 
-      {/* Student Profile Modal */}
-      {showProfileModal && (
-        <UserProfileModal
-          userName={userName}
-          userPoints={totalUserPoints}
-          passedTaskIds={passedTaskIds}
-          certificates={certificates}
-          onSaveName={handleSaveUserName}
-          onViewCertificate={(cert) => {
-            setSelectedCertForModal(cert);
-            setShowProfileModal(false);
-            setShowCertModal(true);
-          }}
-          onResetProgress={handleResetProgress}
-          onClose={() => setShowProfileModal(false)}
-        />
-      )}
-
-      {/* Admin Panel Modal */}
       {showAdminModal && (
-        <AdminModal
-          onClose={() => setShowAdminModal(false)}
-          onRefreshTracks={() => fetchTrack(currentTrackSlug)}
-        />
+        <AdminModal onClose={() => setShowAdminModal(false)} onRefreshTracks={() => view === "course" && fetchTrack(currentTrackSlug)} />
       )}
     </div>
   );

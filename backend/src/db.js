@@ -307,6 +307,37 @@ class Database {
     return { user: safeUser };
   }
 
+  createSession(userId) {
+    if (!this.data.sessions) this.data.sessions = [];
+    const token = crypto.randomBytes(32).toString("hex");
+    this.data.sessions.push({ token, user_id: userId, created_at: new Date().toISOString() });
+    this.save();
+    return token;
+  }
+
+  getUserBySession(token) {
+    if (!token) return null;
+    const session = (this.data.sessions || []).find((s) => s.token === token);
+    const user = session && this.findUserById(session.user_id);
+    if (!user) return null;
+    const { password_hash, ...safeUser } = user;
+    return safeUser;
+  }
+
+  deleteSession(token) {
+    this.data.sessions = (this.data.sessions || []).filter((s) => s.token !== token);
+    this.save();
+  }
+
+  updateUserName(userId, name) {
+    const user = this.findUserById(userId);
+    if (!user) return null;
+    user.name = String(name).trim();
+    this.save();
+    const { password_hash, ...safeUser } = user;
+    return safeUser;
+  }
+
   getAllUsers() {
     return (this.data.users || []).map((u) => {
       const { password_hash, ...safe } = u;
