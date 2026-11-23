@@ -3,6 +3,7 @@ import { api } from "../api.js";
 import { getTrackTheme } from "../trackTheme.js";
 import Logo from "./Logo.jsx";
 import Footer from "./Footer.jsx";
+import { ADMIN_CONTACT, phoneUrl, telegramUrl } from "../contact.js";
 
 const FEATURES = [
   { icon: "📖", title: "O'zbek tilida darsliklar", text: "Har bir mavzu sodda tilda, misollar va kod namunalari bilan tushuntiriladi." },
@@ -40,6 +41,7 @@ export default function Landing({ theme, onToggleTheme, onAuth, onOpenVerify }) 
           <button onClick={() => scrollTo("kurslar")}>Kurslar</button>
           <button onClick={() => scrollTo("imkoniyatlar")}>Imkoniyatlar</button>
           <button onClick={() => scrollTo("qanday")}>Qanday ishlaydi</button>
+          <button onClick={() => scrollTo("aloqa")}>Bog'lanish</button>
         </nav>
         <div className="header-actions">
           <button className="icon-btn" onClick={onToggleTheme} title="Rejimni almashtirish">
@@ -150,6 +152,31 @@ export default function Landing({ theme, onToggleTheme, onAuth, onOpenVerify }) 
               <p>{s.text}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="landing-section" id="aloqa">
+        <div className="section-head">
+          <h2>Admin bilan bog'lanish</h2>
+          <p>Savolingiz bo'lsa yoki AI ustoz yordam bera olmasa, to'g'ridan-to'g'ri yozing</p>
+        </div>
+        <div className="contact-grid">
+          <a className="card contact-card" href={telegramUrl} target="_blank" rel="noopener noreferrer">
+            <span className="contact-icon tg">✈️</span>
+            <span className="contact-text">
+              <strong>Telegram</strong>
+              <span>@{ADMIN_CONTACT.telegram}</span>
+            </span>
+            <span className="contact-go">Yozish →</span>
+          </a>
+          <a className="card contact-card" href={phoneUrl}>
+            <span className="contact-icon ph">📞</span>
+            <span className="contact-text">
+              <strong>Telefon</strong>
+              <span>{ADMIN_CONTACT.phoneLabel}</span>
+            </span>
+            <span className="contact-go">Qo'ng'iroq →</span>
+          </a>
         </div>
       </section>
 

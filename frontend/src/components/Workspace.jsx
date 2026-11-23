@@ -1,3 +1,4 @@
+import { ADMIN_CONTACT, telegramUrl } from "../contact.js";
 import React, { useState, useEffect, useRef } from "react";
 
 // Lightweight Markdown Formatter
@@ -454,6 +455,10 @@ export default function Workspace({
                     {isAskingAi ? "..." : "Yuborish"}
                   </button>
                 </form>
+                <div className="admin-help">
+                  AI javobi yetarli bo'lmasa, admin bilan bog'laning:{" "}
+                  <a href={telegramUrl} target="_blank" rel="noopener noreferrer">✈️ @{ADMIN_CONTACT.telegram}</a>
+                </div>
                 {aiAnswers.length === 0 && (
                   <div className="result-empty">Dars yuzasidan istalgan savolingizni bering — AI ustoz tushuntirib beradi.</div>
                 )}

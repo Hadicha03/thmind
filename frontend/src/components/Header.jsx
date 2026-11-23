@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import Logo from "./Logo.jsx";
+import { telegramUrl, phoneUrl } from "../contact.js";
 
 export default function Header({
   user,
@@ -65,6 +66,8 @@ export default function Header({
               </div>
               <button role="menuitem" onClick={run(onGoHome)}>🏠 Profil va kurslar</button>
               <button role="menuitem" onClick={run(onOpenVerify)}>🔍 Sertifikatni tekshirish</button>
+              <a role="menuitem" href={telegramUrl} target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>✈️ Admin bilan bog'lanish (Telegram)</a>
+              <a role="menuitem" href={phoneUrl} onClick={() => setMenuOpen(false)}>📞 Adminga qo'ng'iroq</a>
               <button role="menuitem" onClick={run(onOpenAdmin)}>🛡️ Admin panel</button>
               <div className="dropdown-sep" />
               <button role="menuitem" className="danger" onClick={run(onLogout)}>🚪 Chiqish</button>

@@ -1,5 +1,6 @@
 import React from "react";
 import Logo from "./Logo.jsx";
+import { ADMIN_CONTACT, phoneUrl, telegramUrl } from "../contact.js";
 
 export default function Footer({ tracks = [], onOpenVerify, onAuth, onOpenTrack }) {
   const year = new Date().getFullYear();
@@ -32,6 +33,12 @@ export default function Footer({ tracks = [], onOpenVerify, onAuth, onOpenTrack 
             </>
           )}
           <button className="footer-link" onClick={onOpenVerify}>Sertifikatni tekshirish</button>
+        </div>
+
+        <div className="footer-col">
+          <h4>Bog'lanish</h4>
+          <a className="footer-link" href={telegramUrl} target="_blank" rel="noopener noreferrer">✈️ @{ADMIN_CONTACT.telegram}</a>
+          <a className="footer-link" href={phoneUrl}>📞 {ADMIN_CONTACT.phoneLabel}</a>
         </div>
       </div>
       <div className="footer-bottom">© {year} THMind. Barcha huquqlar himoyalangan.</div>
