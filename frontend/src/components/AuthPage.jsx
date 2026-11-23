@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { api } from "../api.js";
+import Logo from "./Logo.jsx";
 
-export default function AuthPage({ onAuthenticated, theme, onToggleTheme }) {
-  const [mode, setMode] = useState("login");
+export default function AuthPage({ onAuthenticated, theme, onToggleTheme, initialMode = "login", onBack }) {
+  const [mode, setMode] = useState(initialMode);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,17 +34,16 @@ export default function AuthPage({ onAuthenticated, theme, onToggleTheme }) {
 
   return (
     <div className="auth-page">
+      {onBack && (
+        <button className="btn btn-secondary btn-sm auth-back" onClick={onBack}>← Bosh sahifa</button>
+      )}
       <button className="icon-btn auth-theme" onClick={onToggleTheme} title="Rejimni almashtirish">
         {theme === "dark" ? "☀️" : "🌙"}
       </button>
 
       <div className="auth-card">
         <div className="auth-brand">
-          <div className="brand-logo-badge">TH</div>
-          <div className="brand-title">
-            <span className="red">TH</span>
-            <span className="blue">Mind</span>
-          </div>
+          <Logo size="lg" />
         </div>
         <p className="auth-subtitle">
           Frontend, Backend va Kompyuter savodxonligini amalda o'rganing.

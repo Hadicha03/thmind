@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import Logo from "./Logo.jsx";
 
 export default function Header({
   user,
@@ -37,11 +38,7 @@ export default function Header({
   return (
     <header className="app-header">
       <button className="brand" onClick={onGoHome} title="Bosh sahifa">
-        <span className="brand-logo-badge">TH</span>
-        <span className="brand-title">
-          <span className="red">TH</span>
-          <span className="blue">Mind</span>
-        </span>
+        <Logo />
       </button>
 
       <div className="header-actions">

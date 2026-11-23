@@ -8,6 +8,8 @@ import CertificateVerifyModal from "./components/CertificateVerifyModal.jsx";
 import AdminModal from "./components/AdminModal.jsx";
 import AuthPage from "./components/AuthPage.jsx";
 import Dashboard from "./components/Dashboard.jsx";
+import Landing from "./components/Landing.jsx";
+import Footer from "./components/Footer.jsx";
 import { api, getToken, setToken } from "./api.js";
 
 export default function App() {
@@ -30,6 +32,7 @@ export default function App() {
   // Auth
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [authMode, setAuthMode] = useState(null);
 
   useEffect(() => {
     if (!getToken()) {
@@ -45,7 +48,9 @@ export default function App() {
   const handleAuthenticated = ({ user: u, token }) => {
     setToken(token);
     setUser(u);
+    setAuthMode(null);
     setView("dashboard");
+    window.scrollTo(0, 0);
   };
 
   const handleLogout = async () => {
@@ -186,7 +191,32 @@ export default function App() {
   }
 
   if (!user) {
-    return <AuthPage onAuthenticated={handleAuthenticated} theme={theme} onToggleTheme={toggleTheme} />;
+    if (authMode) {
+      return (
+        <AuthPage
+          key={authMode}
+          initialMode={authMode}
+          onAuthenticated={handleAuthenticated}
+          onBack={() => setAuthMode(null)}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+        />
+      );
+    }
+    return (
+      <>
+        <Landing
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onAuth={(mode) => {
+            setAuthMode(mode);
+            window.scrollTo(0, 0);
+          }}
+          onOpenVerify={() => setShowVerifyModal(true)}
+        />
+        {showVerifyModal && <CertificateVerifyModal onClose={() => setShowVerifyModal(false)} />}
+      </>
+    );
   }
 
   const currentTrackProgress = progressByTrack[currentTrackSlug] || {
@@ -220,6 +250,7 @@ export default function App() {
       )}
 
       {view === "dashboard" ? (
+        <>
         <Dashboard
           user={user}
           tracks={tracks}
@@ -234,6 +265,8 @@ export default function App() {
             setShowCertModal(true);
           }}
         />
+        <Footer tracks={tracks} onOpenTrack={openTrack} onOpenVerify={() => setShowVerifyModal(true)} />
+        </>
       ) : (
         <>
           <TrackHeader
