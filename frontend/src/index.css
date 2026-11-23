@@ -1274,3 +1274,7 @@ select.input option { background: var(--bg-surface); color: var(--text-primary);
   .cta-band { padding: var(--sp-6) var(--sp-4); }
   .auth-page { padding-top: 72px; align-items: flex-start; }
 }
+
+/* Safari: flex children of <button> don't stretch by default */
+.course-card > * { width: 100%; }
+.course-card > .course-cta { width: auto; }
